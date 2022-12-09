@@ -308,11 +308,14 @@ census_df['State'] = state
 census_df['Population'] = population
 census_df['Year'] = iterationyear
                                      
-print(census_df)
+#print(census_df)
 
-cleaned_census_df = census_df.groupby(['State', 'Year']).sum()
+cleaned_census_df = census_df.groupby(['State', 'Year'])["Population", "Year"].sum()
 
-print(cleaned_census_df)
+cleaned_census_df = pd.merge(cleaned_census_df, state_df, how = "left", on = "State")
+
+cleaned_census_df.rename(columns={"State": "State Name", "Code": "State"}, inplace = True)
+cleaned_census_df
 
 #################################
 
@@ -438,4 +441,68 @@ energy_total.reset_index()
 #Create Hbar graph showcase each years totals of Investment per Energy Source
 energy_total.plot.bar(figsize =(20,10),title= 'Investment of Energy Source Per year',ylabel='Investment in Dollars (in Hundred Millions)')
 
+###############################
 
+# Group Production Data, add 'Energy Source' field and merge as one
+prod_df_merge = prod_df.groupby(["Year", "State", "Energy Source"])['Generation (Megawatthours)'].sum()
+prod_df_merge2 = prod_df.groupby(["Year", "State", "Energy Source"])['Energy Source'].first().reset_index(name ='Source')
+prod_df_merge = pd.merge(prod_df_merge, prod_df_merge2, on = ["Year", "State", "Energy Source"])
+
+# Group Investment Data
+inv_df_merge = inv_df.groupby(["Year", "State", "Energy Source"])['Total Number of Investments', 'Total Amount of Assistance'].sum()
+
+# Merge Production and Investment Data
+temp = pd.merge(prod_df_merge, inv_df_merge, on = ["Year", "State", "Energy Source"])
+
+# Merge Production, Investment, and Census Data
+final = pd.merge(temp, cleaned_census_df, on = ["Year", "State"])
+
+# Final data grouped by Year, State, Energy Source - reorder columns and add data fields
+final = final[['Year', 'State', 'State Name', 'Population', 'Energy Source', 'Source', 'Generation (Megawatthours)', 'Total Number of Investments', 
+               'Total Amount of Assistance']]
+final['Generation per Investment'] = final['Generation (Megawatthours)'] / final['Total Amount of Assistance']
+final['Generation per Capita'] = final['Generation (Megawatthours)'] / final['Population']
+final['# Investments per Capita'] = final['Total Number of Investments'] / final['Population']
+final['Investment per Capita'] = final['Total Amount of Assistance'] / final['Population']
+final
+
+###############################
+
+# Population per State over all years
+state_pop = cleaned_census_df.groupby('State')['Population'].sum()
+
+# Production and Investment metrics per State over all years
+final_state = final.groupby(['State'])[['Generation (Megawatthours)', 'Total Number of Investments', 'Total Amount of Assistance']].sum()
+
+# Merge to get data grouped by state over all years and add variables
+final_state = pd.merge(final_state, state_pop, on = "State")
+
+final_state['Generation per Investment'] = final_state['Generation (Megawatthours)'] / final_state['Total Amount of Assistance']
+final_state['Generation per Capita'] = final_state['Generation (Megawatthours)'] / final_state['Population']
+final_state['# Investments per Capita'] = final_state['Total Number of Investments'] / final_state['Population']
+final_state['Investment per Capita'] = final_state['Total Amount of Assistance'] / final_state['Population']
+final_state.head()
+
+###############################
+
+# Generate a box plot of the Total Generation per Investment
+y_axis1 = final_state['Generation per Investment']
+y_axis2 = final_state['Generation per Capita']
+y_axis3 = final_state['Investment per Capita']
+
+fig, ax = plt.subplots(1, 3, figsize=(12, 4), sharey=True)
+ax[0].set_ylabel('Generation per Investment')
+ax[0].boxplot(y_axis1, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[0].set_xticklabels('')
+
+ax[1].set_ylabel('Generation per Capita')
+ax[1].boxplot(y_axis2, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[1].set_xticklabels('')
+
+ax[2].set_ylabel('Investment per Capita')
+ax[2].boxplot(y_axis3, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[2].set_xticklabels('')
+
+plt.show()
+
+###############################
