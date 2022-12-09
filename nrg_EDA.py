@@ -41,11 +41,18 @@ prod_df.head()
 ####################
 
 # Import Investment Data
-# Investment Data Source
+# Investment Data Source:
 # https://www.wctsservices.usda.gov/Energy/Downloads
 
 # Load the Investment Excel file, "Detailed" Sheet
 inv_df = pd.read_excel("Resources/EnergyInvestments_DataDownloads.xlsx", sheet_name = "Detailed")
+
+# Unused state list
+state_ex = ['American Samoa', 'Commonwealth of the Northern Mariana Islands', 'Federated States of Micronesia', 'Guam', 'Marshall Islands', 'Puerto Rico', 
+            'United States Virgin Islands']
+
+# Filter for years 2002 - 2021 to match investment data set, filter out unused states and 'Total' rows
+inv_df = inv_df.loc[~inv_df['State'].isin(state_ex)]
 
 # Filter for common energy types across both data sets
 inv_source_list = ['Geothermal', 'Hydroelectric', 'Renewable Biomass', 'Solar', 'Wind']
