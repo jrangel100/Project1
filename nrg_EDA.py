@@ -449,6 +449,8 @@ energy_total.reset_index()
 energy_total.plot.bar(figsize =(20,10),title= 'Investment of Energy Source Per year',ylabel='Investment in Dollars (in Hundred Millions)')
 
 ###############################
+# Mike final code >>>>>>>>>>>>>
+###############################
 
 # Group Production Data, add 'Energy Source' field and merge as one
 prod_df_merge = prod_df.groupby(["Year", "State", "Energy Source"])['Generation (Megawatthours)'].sum()
@@ -476,7 +478,7 @@ final
 ###############################
 
 # Population per State over all years
-state_pop = cleaned_census_df.groupby('State')['Population'].sum()
+state_pop = cleaned_census_df.groupby('State')['Population'].mean()
 
 # Production and Investment metrics per State over all years
 final_state = final.groupby(['State'])[['Generation (Megawatthours)', 'Total Number of Investments', 'Total Amount of Assistance']].sum()
@@ -488,7 +490,7 @@ final_state['Generation per Investment'] = final_state['Generation (Megawatthour
 final_state['Generation per Capita'] = final_state['Generation (Megawatthours)'] / final_state['Population']
 final_state['# Investments per Capita'] = final_state['Total Number of Investments'] / final_state['Population']
 final_state['Investment per Capita'] = final_state['Total Amount of Assistance'] / final_state['Population']
-final_state.head()
+final_state.reset_index().head()
 
 ###############################
 
@@ -497,7 +499,7 @@ y_axis1 = final_state['Generation per Investment']
 y_axis2 = final_state['Generation per Capita']
 y_axis3 = final_state['Investment per Capita']
 
-fig, ax = plt.subplots(1, 3, figsize=(12, 4), sharey=True)
+fig, ax = plt.subplots(1, 3, figsize=(15, 4))
 ax[0].set_ylabel('Generation per Investment')
 ax[0].boxplot(y_axis1, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
 ax[0].set_xticklabels('')
@@ -513,3 +515,239 @@ ax[2].set_xticklabels('')
 plt.show()
 
 ###############################
+
+# Sort descending on Generation per Investment
+final_state.sort_values(by=['Generation per Investment'], ascending = False)['Generation per Investment']
+
+###############################
+
+# Sort descending on Generation per Capita
+final_state.sort_values(by=['Generation per Capita'], ascending = False)['Generation per Capita']
+
+###############################
+
+# Sort descending on Investment per Capita
+final_state.sort_values(by=['Investment per Capita'], ascending = False)['Investment per Capita']
+
+###############################
+
+# Scatter plot for Investment vs Generation
+# x values
+x_vals = final_state['Total Amount of Assistance']
+
+# y values
+y_vals = final_state['Generation (Megawatthours)']
+
+# Get metrics for linear regression
+(slope, intercept, rvalue, pvalue, stderr) = linregress(x_vals, y_vals)
+regress_values = x_vals * slope + intercept
+
+# print correlation coefficient
+print(f"The correlation between investment and production is {round(rvalue,2)}")
+
+# Scatter plot with best fit line
+plt.figure(figsize = (5, 5))
+scat_plot2 = plt.scatter(x_vals, y_vals, marker="o", facecolors="blue", edgecolors="blue")
+plt.xlabel("Total Amount of Assistance")
+plt.ylabel("Generation (Megawatthours)")
+plt.plot(x_vals, regress_values, "r-")
+plt.show()
+
+###############################
+
+# Scatter plot for Population vs Production
+# x values
+x_vals = final_state['Population']
+
+# y values
+y_vals = final_state['Generation (Megawatthours)']
+
+# Get metrics for linear regression
+(slope, intercept, rvalue, pvalue, stderr) = linregress(x_vals, y_vals)
+regress_values = x_vals * slope + intercept
+
+# print correlation coefficient
+print(f"The correlation between population and production is {round(rvalue,2)}")
+
+# Scatter plot with best fit line
+plt.figure(figsize = (5, 5))
+scat_plot2 = plt.scatter(x_vals, y_vals, marker="o", facecolors="blue", edgecolors="blue")
+plt.xlabel("Population")
+plt.ylabel("Generation (Megawatthours)")
+plt.plot(x_vals, regress_values, "r-")
+plt.show()
+
+###############################
+
+# Scatter plot for Population vs Investment
+# x values
+x_vals = final_state['Population']
+
+# y values
+y_vals = final_state['Total Amount of Assistance']
+
+# Get metrics for linear regression
+(slope, intercept, rvalue, pvalue, stderr) = linregress(x_vals, y_vals)
+regress_values = x_vals * slope + intercept
+
+# print correlation coefficient
+print(f"The correlation between population and investment is {round(rvalue,2)}")
+
+# Scatter plot with best fit line
+plt.figure(figsize = (5, 5))
+scat_plot2 = plt.scatter(x_vals, y_vals, marker="o", facecolors="blue", edgecolors="blue")
+plt.xlabel("Population")
+plt.ylabel("Total Amount of Assistance")
+plt.plot(x_vals, regress_values, "r-")
+plt.show()
+
+###############################
+
+# Group Production Data by State and Energy Source, add 'Energy Source' field and merge as one
+prod_df_mrg = prod_df.groupby(["State", "Energy Source"])['Generation (Megawatthours)'].sum()
+prod_df_mrg2 = prod_df.groupby(["State", "Energy Source"])['Energy Source'].first().reset_index(name ='Source')
+prod_df_mrg = pd.merge(prod_df_mrg, prod_df_mrg2, on = ["State", "Energy Source"])
+
+# Group Investment Data
+inv_df_mrg = inv_df.groupby(["State", "Energy Source"])['Total Number of Investments', 'Total Amount of Assistance'].sum()
+
+# Merge Production and Investment Data
+temp_mrg = pd.merge(prod_df_mrg, inv_df_mrg, on = ["State", "Energy Source"])
+
+# Merge Production, Investment, and Census Data
+final_mrg = pd.merge(temp_mrg, state_pop, on = "State")
+
+# Final data grouped by State and Energy Source - reorder columns and add data fields
+final_mrg = final_mrg[['State', 'Population', 'Energy Source', 'Source', 'Generation (Megawatthours)', 'Total Number of Investments', 'Total Amount of Assistance']]
+final_mrg['Generation per Investment'] = final_mrg['Generation (Megawatthours)'] / final_mrg['Total Amount of Assistance']
+final_mrg['Generation per Capita'] = final_mrg['Generation (Megawatthours)'] / final_mrg['Population']
+final_mrg['# Investments per Capita'] = final_mrg['Total Number of Investments'] / final_mrg['Population']
+final_mrg['Investment per Capita'] = final_mrg['Total Amount of Assistance'] / final_mrg['Population']
+final_mrg
+
+###############################
+
+# Box Plot 
+# Filter final df for each Energy Source and compare side-by-side
+final_mrg_bio = final_mrg.loc[final_mrg['Energy Source'] == source_list[0]]['Generation per Investment']
+final_mrg_geo = final_mrg.loc[final_mrg['Energy Source'] == source_list[1]]['Generation per Investment']
+final_mrg_hyd = final_mrg.loc[final_mrg['Energy Source'] == source_list[2]]['Generation per Investment']
+final_mrg_sol = final_mrg.loc[final_mrg['Energy Source'] == source_list[3]]['Generation per Investment']
+final_mrg_wnd = final_mrg.loc[final_mrg['Energy Source'] == source_list[4]]['Generation per Investment']
+
+# Generate a box plot of the Total Generation per Investment
+y_axis1 = final_mrg_bio
+y_axis2 = final_mrg_geo
+y_axis3 = final_mrg_hyd
+y_axis4 = final_mrg_sol
+y_axis5 = final_mrg_wnd
+
+fig, ax = plt.subplots(1, 5, figsize=(18, 4), sharey=True)
+ax[0].set_ylabel(source_list[0])
+ax[0].boxplot(y_axis1, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[0].set_xticklabels('')
+
+ax[1].set_ylabel(source_list[1])
+ax[1].boxplot(y_axis2, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[1].set_xticklabels('')
+
+ax[2].set_ylabel(source_list[2])
+ax[2].boxplot(y_axis3, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[2].set_xticklabels('')
+
+ax[3].set_ylabel(source_list[3])
+ax[3].boxplot(y_axis4, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[3].set_xticklabels('')
+
+ax[4].set_ylabel(source_list[4])
+ax[4].boxplot(y_axis5, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[4].set_xticklabels('')
+
+fig.suptitle('Generation per Investment')
+plt.yscale("log")
+plt.show()
+
+###############################
+
+# Box Plot 
+# Filter final df for each Energy Source and compare side-by-side
+final_mrg_bio = final_mrg.loc[final_mrg['Energy Source'] == source_list[0]]['Generation per Capita']
+final_mrg_geo = final_mrg.loc[final_mrg['Energy Source'] == source_list[1]]['Generation per Capita']
+final_mrg_hyd = final_mrg.loc[final_mrg['Energy Source'] == source_list[2]]['Generation per Capita']
+final_mrg_sol = final_mrg.loc[final_mrg['Energy Source'] == source_list[3]]['Generation per Capita']
+final_mrg_wnd = final_mrg.loc[final_mrg['Energy Source'] == source_list[4]]['Generation per Capita']
+
+# Generate a box plot of the Total Generation per Capita
+y_axis1 = final_mrg_bio
+y_axis2 = final_mrg_geo
+y_axis3 = final_mrg_hyd
+y_axis4 = final_mrg_sol
+y_axis5 = final_mrg_wnd
+
+fig, ax = plt.subplots(1, 5, figsize=(18, 4), sharey=True)
+ax[0].set_ylabel(source_list[0])
+ax[0].boxplot(y_axis1, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[0].set_xticklabels('')
+
+ax[1].set_ylabel(source_list[1])
+ax[1].boxplot(y_axis2, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[1].set_xticklabels('')
+
+ax[2].set_ylabel(source_list[2])
+ax[2].boxplot(y_axis3, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[2].set_xticklabels('')
+
+ax[3].set_ylabel(source_list[3])
+ax[3].boxplot(y_axis4, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[3].set_xticklabels('')
+
+ax[4].set_ylabel(source_list[4])
+ax[4].boxplot(y_axis5, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[4].set_xticklabels('')
+
+fig.suptitle('Generation per Capita')
+plt.yscale("log")
+plt.show()
+
+###############################
+
+# Box Plot 
+# Filter final df for each Energy Source and compare side-by-side
+final_mrg_bio = final_mrg.loc[final_mrg['Energy Source'] == source_list[0]]['Investment per Capita']
+final_mrg_geo = final_mrg.loc[final_mrg['Energy Source'] == source_list[1]]['Investment per Capita']
+final_mrg_hyd = final_mrg.loc[final_mrg['Energy Source'] == source_list[2]]['Investment per Capita']
+final_mrg_sol = final_mrg.loc[final_mrg['Energy Source'] == source_list[3]]['Investment per Capita']
+final_mrg_wnd = final_mrg.loc[final_mrg['Energy Source'] == source_list[4]]['Investment per Capita']
+
+# Generate a box plot of the Total Investment per Capita
+y_axis1 = final_mrg_bio
+y_axis2 = final_mrg_geo
+y_axis3 = final_mrg_hyd
+y_axis4 = final_mrg_sol
+y_axis5 = final_mrg_wnd
+
+fig, ax = plt.subplots(1, 5, figsize=(18, 4), sharey=True)
+ax[0].set_ylabel(source_list[0])
+ax[0].boxplot(y_axis1, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[0].set_xticklabels('')
+
+ax[1].set_ylabel(source_list[1])
+ax[1].boxplot(y_axis2, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[1].set_xticklabels('')
+
+ax[2].set_ylabel(source_list[2])
+ax[2].boxplot(y_axis3, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[2].set_xticklabels('')
+
+ax[3].set_ylabel(source_list[3])
+ax[3].boxplot(y_axis4, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[3].set_xticklabels('')
+
+ax[4].set_ylabel(source_list[4])
+ax[4].boxplot(y_axis5, flierprops = {'marker': 'o', 'markersize': 10, 'markerfacecolor': 'red'})
+ax[4].set_xticklabels('')
+
+fig.suptitle('Investment per Capita')
+plt.yscale("log")
+plt.show()
+
