@@ -215,7 +215,8 @@ state_pct['Geothermal %'] = (state_pct[source_list[1]] / state_pct['Total'])
 state_pct['Hydroelectric %'] = (state_pct[source_list[2]] / state_pct['Total'])
 state_pct['Solar %'] = (state_pct[source_list[3]] / state_pct['Total'])
 state_pct['Wind %'] = (state_pct[source_list[4]] / state_pct['Total'])
-state_pct = state_pct.iloc[:, 6:11]
+state_pct['Hydro + Wind %'] = ((state_pct[source_list[2]] + state_pct[source_list[4]]) / state_pct['Total'])
+state_pct = state_pct.iloc[:, 6:12]
 state_pct
 
 
@@ -236,6 +237,8 @@ sol_pct = state_pct.sort_values(by=['Solar %'], ascending = False)
 sol = list(sol_pct.iloc[0:5, 3].index)
 wnd_pct = state_pct.sort_values(by=['Wind %'], ascending = False)
 wnd = list(wnd_pct.iloc[0:5, 4].index)
+hyd_wnd_pct = state_pct.sort_values(by=['Hydro + Wind %'], ascending = False)
+hyd_wnd = list(hyd_wnd_pct.iloc[0:5, 5].index)
 
 # Create summary dataframe to show the top 5 states for each Energy Source
 summary = pd.DataFrame({'Rank': np.arange(1, 6, 1),
@@ -243,7 +246,8 @@ summary = pd.DataFrame({'Rank': np.arange(1, 6, 1),
                         'Geothermal %': geo,
                         'Hydroelectric %': hyd,
                         'Solar %': sol,
-                        'Wind %': wnd})
+                        'Wind %': wnd,
+                        'Hydro + Wind %': hyd_wnd})
 summary
 
 
@@ -598,6 +602,30 @@ plt.figure(figsize = (5, 5))
 scat_plot2 = plt.scatter(x_vals, y_vals, marker="o", facecolors="blue", edgecolors="blue")
 plt.xlabel("Population")
 plt.ylabel("Total Amount of Assistance")
+plt.plot(x_vals, regress_values, "r-")
+plt.show()
+
+###############################
+
+# Scatter plot for Investment per Capita vs Generation per Capita
+# x values
+x_vals = final_state['Investment per Capita']
+
+# y values
+y_vals = final_state['Generation per Capita']
+
+# Get metrics for linear regression
+(slope, intercept, rvalue, pvalue, stderr) = linregress(x_vals, y_vals)
+regress_values = x_vals * slope + intercept
+
+# print correlation coefficient
+print(f"The correlation between population and investment is {round(rvalue,2)}")
+
+# Scatter plot with best fit line
+plt.figure(figsize = (5, 5))
+scat_plot2 = plt.scatter(x_vals, y_vals, marker="o", facecolors="blue", edgecolors="blue")
+plt.xlabel("Investment per Capita")
+plt.ylabel("Generation per Capita")
 plt.plot(x_vals, regress_values, "r-")
 plt.show()
 
